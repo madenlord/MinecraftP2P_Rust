@@ -42,6 +42,7 @@ fn prepare_command_buff(command: &mut String) {
 
 fn handle_command(command: &str) {
     match command {
+        "ip" => command::handle_ip(),
         "quit" => command::handle_quit(),
         _ => command::handle_unknown(command), 
     };
