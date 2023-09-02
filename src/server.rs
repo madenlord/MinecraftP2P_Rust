@@ -18,8 +18,8 @@ pub struct Server {
 pub struct ServerConfig {
     ip: String,
     // port: u16 = DEFAULT_PORT = 25565;
-    mem_max: u64,
-    mem_init: u64,
+    mem_max: String,
+    mem_init: String,
     gui: bool,
 }
 
@@ -48,8 +48,8 @@ impl Server {
 
 impl ServerConfig {
     pub fn new(
-        mem_max: u64, 
-        mem_init: u64, gui: bool
+        mem_max: String, 
+        mem_init: String, gui: bool
     ) ->  Result<ServerConfig, Box<dyn Error>>{
         Ok(ServerConfig {
             ip: Self::find_public_ip()?,

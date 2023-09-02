@@ -28,35 +28,36 @@ impl Cli {
         let mut command = String::new();
 
         while !self.stop {
-            Self::prepare_command_buff(&mut command);
-            Self::read_command(&mut command)?;
+            read_command(&mut command)?;
             self.handle_command(&command);
         }
 
         Ok(())
     }
 
-    fn read_command(command: &mut String) -> IoResult<()> {
-        print!("> ");
-        io::stdout().flush()?;
-        io::stdin()
-            .read_line(command)?;
-
-        *command = command.trim().to_string();
-
-        Ok(())
-    }
-
-    fn prepare_command_buff(command: &mut String) {
-        if !command.is_empty() { command.clear(); }
-    }
-
     fn handle_command(&mut self, command: &str) {
         match command {
             "getip" => command::handle_ip(&self.server),
-//            "config" => command::handle_config(&mut self.server),
+            "config" => command::handle_config(&mut self.server)
+                        .expect("Error building configuration."), 
             "quit" => self.stop = true,
             _ => command::handle_unknown(command), 
         };
     }
+}
+
+pub fn read_command(command: &mut String) -> IoResult<()> {
+    prepare_command_buff(command);
+    print!("> ");
+    io::stdout().flush()?;
+    io::stdin()
+        .read_line(command)?;
+
+    *command = command.trim().to_string();
+
+    Ok(())
+}
+
+fn prepare_command_buff(command: &mut String) {
+    if !command.is_empty() { command.clear(); }
 }

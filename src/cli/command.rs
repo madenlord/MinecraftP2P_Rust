@@ -1,17 +1,22 @@
+use std::error::Error;
+use regex::Regex;
+
 use crate::server as srvr;
 
 // TODO: Implement the following commands:
-//      + getip (returns your public IP)
-//          - For now, handle_ip() will make a query to know our public IP.
-//            Nevertheless, the idea is that ip returns the IP stored in the
-//            server struct, that has already launched the get_public_ip() fn.
 //      + port (returns the TCP port binded to the Minecraft server)
 //      + host (owns the server or returns the current server host name)
 //      + run (starts the server and asks for config if not specified
 //              by args)
 //      + state (returns the state of the server)
 //      + stop (stops the server if running)
-//      + config (builds the Server obj and asks for server config)
+
+
+
+
+//=================================================================
+//====================   COMMAND FUNCTIONS   ======================
+//=================================================================
 
 pub fn handle_ip(server: &srvr::Server) {
     if let Some(config) = server.get_config() {
@@ -22,9 +27,80 @@ pub fn handle_ip(server: &srvr::Server) {
     }
 }
 
-//pub fn handle_config(mut server: &srvr::Server) {
-//}
+pub fn handle_config(server: &mut srvr::Server) -> Result<(), Box<dyn Error>>{
+    let regex_mem: &str = "[1-9][0-9]*[MG]";
+    let regex_gui: &str = "[YN]";
+
+    println!("\nTo introduce memory data, please refer to units with its initial");
+    println!("(That is, 500 MB => 500M, 5 GB => 5G...)");
+
+    println!("\nIntroduce initial memory (default = 512M)");
+    let mem_init = read_config_input(regex_mem, "512M").unwrap();
+    println!("\nIntroduce max memory (default = 2G)");
+    let mem_max = read_config_input(regex_mem, "2G").unwrap();
+    println!("\nDo you want the GUI to be visible? (Y/N)");
+    let gui_string = read_config_input(regex_gui, "Y").unwrap();
+
+    let gui: bool;
+    match gui_string.as_str() {
+        "Y" => gui = true,
+        _ => gui = false,
+    }
+
+    println!("\nBuilding server configuration...");
+
+    let server_config = srvr::ServerConfig::new(mem_max,mem_init,gui);
+
+    match server_config {
+        Ok(_) => {
+            println!("\nServer configured!");
+            server.configure(server_config.unwrap());
+            Ok(())
+        },
+        Err(boxdyn) => {
+            println!("\nCould not retrieve public IP of the current device.");
+            Err(boxdyn)
+        },
+    }
+}
 
 pub fn handle_unknown(command: &str) {
     println!("Received {:?}", command);
+}
+
+
+
+
+//=================================================================
+//====================   AUXILIAR FUNCTIONS   =====================
+//=================================================================
+fn read_config_input(regex_input: &str, default: &str) -> Result<String, std::io::Error> {
+    let mut input: String = String::from("");
+    let re = Regex::new(regex_input).unwrap();
+
+    let mut valid: bool = false;
+    let mut mem: &str;
+    let mut is_match: bool;
+    while !valid {
+        super::read_command(&mut input)?;
+        mem = input.trim();
+        is_match = re.is_match(mem);
+
+        if is_match || mem.is_empty() {
+            valid = true; 
+            match is_match {
+                true => input = String::from(re.captures(mem)
+                                .unwrap()
+                                .get(0)
+                                .unwrap()
+                                .as_str()),
+                false => input = String::from(default)
+            }
+        }
+        else {
+            println!("Value not valid. Please, enter a valid value.");
+        }
+    }
+
+    Ok(input)
 }
