@@ -40,6 +40,7 @@ impl Cli {
             "getip" => command::handle_ip(&self.server),
             "config" => command::handle_config(&mut self.server)
                         .expect("Error building configuration."), 
+            "run" => command::handle_run(&mut self.server),
             "quit" => self.stop = true,
             _ => command::handle_unknown(command), 
         };

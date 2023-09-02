@@ -6,8 +6,6 @@ use crate::server as srvr;
 // TODO: Implement the following commands:
 //      + port (returns the TCP port binded to the Minecraft server)
 //      + host (owns the server or returns the current server host name)
-//      + run (starts the server and asks for config if not specified
-//              by args)
 //      + state (returns the state of the server)
 //      + stop (stops the server if running)
 
@@ -17,7 +15,6 @@ use crate::server as srvr;
 //=================================================================
 //====================   COMMAND FUNCTIONS   ======================
 //=================================================================
-
 pub fn handle_ip(server: &srvr::Server) {
     if let Some(config) = server.get_config() {
         println!("Public IP address: {}", config.get_public_ip());
@@ -61,6 +58,20 @@ pub fn handle_config(server: &mut srvr::Server) -> Result<(), Box<dyn Error>>{
             println!("\nCould not retrieve public IP of the current device.");
             Err(boxdyn)
         },
+    }
+}
+
+pub fn handle_run(server: &mut srvr::Server) {
+    if !server.is_config() {
+        println!("\nServer has not been configured yet!");
+        println!("Starting configuration command...");
+        handle_config(server).expect("Error building configuration");
+    }
+    let result = server.run();
+
+    match result {
+        Ok(_) => println!("\nServer initialized successfully!\n"), 
+        Err(err) => println!("{}", srvr::get_error_msg(err).as_str()),
     }
 }
 
