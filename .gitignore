@@ -15,3 +15,6 @@ Cargo.lock
 
 # Minecraft server folder
 server/
+
+# Logs folder
+logs/

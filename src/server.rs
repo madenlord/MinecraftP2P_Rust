@@ -115,6 +115,8 @@ impl Server {
 
 
 // TODO: store configuration in a config file
+// Maybe separate Server and ServerConfig in different
+// files / modules?
 impl ServerConfig {
     pub fn new(
         mem_max: String, 

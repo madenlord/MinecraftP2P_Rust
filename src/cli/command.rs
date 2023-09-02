@@ -4,7 +4,8 @@ use regex::Regex;
 use crate::server as srvr;
 
 // TODO: Implement the following commands:
-//      + port (returns the TCP port binded to the Minecraft server)
+//      + getpublicip (returns public IP)
+//      + getprivateip (returns private IP)
 //      + host (owns the server or returns the current server host name)
 //      + state (returns the state of the server)
 //      + stop (stops the server if running)
