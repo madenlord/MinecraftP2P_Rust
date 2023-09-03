@@ -1,5 +1,5 @@
 pub mod servercfg;
-pub mod ioutils;
+mod ioutils;
 
 use std::process::Child;
 
