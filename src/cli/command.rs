@@ -1,7 +1,8 @@
 use std::error::Error;
 use regex::Regex;
 
-use crate::server as srvr;
+use crate::server::Server;
+use crate::server::servercfg::ServerConfig;
 
 // TODO: Implement the following commands:
 //      + getpublicip (returns public IP)
@@ -16,7 +17,7 @@ use crate::server as srvr;
 //=================================================================
 //====================   COMMAND FUNCTIONS   ======================
 //=================================================================
-pub fn handle_ip(server: &srvr::Server) {
+pub fn handle_ip(server: &Server) {
     if let Some(config) = server.get_config() {
         println!("Public IP address: {}", config.get_public_ip());
     } 
@@ -25,7 +26,7 @@ pub fn handle_ip(server: &srvr::Server) {
     }
 }
 
-pub fn handle_config(server: &mut srvr::Server) -> Result<(), Box<dyn Error>>{
+pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
     let regex_mem: &str = "[1-9][0-9]*[MG]";
     let regex_gui: &str = "[YN]";
 
@@ -47,7 +48,7 @@ pub fn handle_config(server: &mut srvr::Server) -> Result<(), Box<dyn Error>>{
 
     println!("\nBuilding server configuration...");
 
-    let server_config = srvr::ServerConfig::new(mem_max,mem_init,gui);
+    let server_config = ServerConfig::new(mem_max,mem_init,gui);
 
     match server_config {
         Ok(_) => {
@@ -62,7 +63,7 @@ pub fn handle_config(server: &mut srvr::Server) -> Result<(), Box<dyn Error>>{
     }
 }
 
-pub fn handle_run(server: &mut srvr::Server) {
+pub fn handle_run(server: &mut Server) {
     if !server.is_config() {
         println!("\nServer has not been configured yet!");
         println!("Starting configuration command...");
@@ -72,7 +73,7 @@ pub fn handle_run(server: &mut srvr::Server) {
 
     match result {
         Ok(_) => println!("\nServer initialized successfully!\n"), 
-        Err(err) => println!("{}", srvr::get_error_msg(err).as_str()),
+        Err(err) => println!("{}", crate::server::get_error_msg(err).as_str()),
     }
 }
 
