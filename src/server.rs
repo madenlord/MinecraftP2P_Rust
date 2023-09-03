@@ -1,7 +1,7 @@
 pub mod servercfg;
+pub mod ioutils;
 
-use std::process::{Command, Child, Stdio};
-use std::fs::OpenOptions;
+use std::process::Child;
 
 use servercfg::ServerConfig;
 
@@ -69,30 +69,23 @@ impl Server {
         }
     }
 
-    // TODO: implement crate or module that handles all the "std::process::Command"
-    // stuff, only needing to know the program to be executed, the directory, 
-    // the output and the arguments.
     fn execute_server_jar(&mut self) -> Result<(), std::io::Error> {
         if let Some(config) = &(self.config) {
-            let mut cmd_command = Command::new("java");
-            
-            // Stdio::from does not allow mutable references. That is,
-            // it is impossible to pass something such as "self.log_file"
-            cmd_command
-            .current_dir("mojang/")
-            .stdout(Stdio::from(
-                OpenOptions::new().write(true).create(true)
-                .open(LOG_PATH).expect("Failed opening log file.")     
-            )).args([
-                    format!("-Xmx{}", config.get_mem_max()),
-                    format!("-Xms{}", config.get_mem_init()),
-                    String::from("-jar"),
-                    String::from("server.jar")
-            ]);
+            let program = "java";
+            let dir = "mojang/";
+            let mut args = [
+                format!("-Xmx{}", config.get_mem_max()),
+                format!("-Xms{}", config.get_mem_init()),
+                String::from("-jar"),
+                String::from("server.jar"),
+                String::from("")
+            ];
 
-            if !config.get_gui() { cmd_command.arg("--nogui"); }
+            if !config.get_gui() { args[4] = String::from("--nogui"); }
 
-            self.process = Some(cmd_command.spawn()?);
+            self.process = Some(ioutils::terminal::execute_command(
+                program, args, dir, LOG_PATH
+            )?);
         }
         
         Ok(())
