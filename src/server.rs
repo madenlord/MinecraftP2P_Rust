@@ -21,14 +21,15 @@ pub struct Server {
 
 enum State {
     HOSTED(String),
-    RUNNING,
+    RUNNING(u32),
     STOPPED,
 }
 
 pub enum ServerError {
     NO_CONFIG,
-    RUNNING,
+    RUNNING(u32),
     HOSTED(String),
+    JAR_FAIL,
 }
 
 impl Server {
@@ -58,18 +59,17 @@ impl Server {
             return Err(ServerError::NO_CONFIG)
         }
         match &(self.state) {
-            State::RUNNING => Err(ServerError::RUNNING),
+            State::RUNNING(pid) => Err(ServerError::RUNNING(*pid)),
             State::HOSTED(host) => Err(ServerError::HOSTED(String::from(host))),
             State::STOPPED => { 
-                self.execute_server_jar()
-                .expect("Could not execute the server binary (server/server.jar)"); 
-                self.state = State::RUNNING;
+                let pid = self.execute_server_jar()?;
+                self.state = State::RUNNING(pid);
                 Ok(())
             }
         }
     }
 
-    fn execute_server_jar(&mut self) -> Result<(), std::io::Error> {
+    fn execute_server_jar(&mut self) -> Result<u32, ServerError> {
         if let Some(config) = &(self.config) {
             let program = "java";
             let dir = "mojang/";
@@ -83,12 +83,22 @@ impl Server {
 
             if !config.get_gui() { args[4] = String::from("--nogui"); }
 
-            self.process = Some(ioutils::terminal::execute_command(
+            let command_result = ioutils::terminal::execute_command(
                 program, args, dir, LOG_PATH
-            )?);
+            );
+
+            match command_result {
+                Ok(child) => {
+                    let pid = child.id();
+                    self.process = Some(child);
+                    Ok(pid)
+                }
+                Err(_) => Err(ServerError::JAR_FAIL)
+            } 
         }
-        
-        Ok(())
+        else {
+            Err(ServerError::NO_CONFIG)
+        }
     }
 }
 
@@ -101,7 +111,8 @@ impl Server {
 pub fn get_error_msg(err: ServerError) -> String {
     match err {
         ServerError::NO_CONFIG => String::from("Server has not been configured yet!"),
-        ServerError::RUNNING => String::from("Server is already running on your device!\n"),
-        ServerError::HOSTED(host) => String::from(format!("Server is being hosted by {}", host.as_str()))
+        ServerError::RUNNING(pid) => String::from(format!("Server is already running! (PID = {})\n", pid)),
+        ServerError::HOSTED(host) => String::from(format!("Server is being hosted by {}", host.as_str())),
+        ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!"),
     }
 }
