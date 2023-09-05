@@ -5,7 +5,6 @@ use crate::server::Server;
 use crate::server::servercfg::ServerConfig;
 
 // TODO: Implement the following commands:
-//      + getpublicip (returns public IP)
 //      + getprivateip (returns private IP)
 //      + host (owns the server or returns the current server host name)
 //      + state (returns the state of the server)
@@ -17,7 +16,7 @@ use crate::server::servercfg::ServerConfig;
 //=================================================================
 //====================   COMMAND FUNCTIONS   ======================
 //=================================================================
-pub fn handle_ip(server: &Server) {
+pub fn handle_public_ip(server: &Server) {
     if let Some(config) = server.get_config() {
         println!("Public IP address: {}", config.get_public_ip());
     } 

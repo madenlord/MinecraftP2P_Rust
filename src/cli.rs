@@ -37,7 +37,7 @@ impl Cli {
 
     fn handle_command(&mut self, command: &str) {
         match command {
-            "getip" => command::handle_ip(&self.server),
+            "getpublicip" => command::handle_public_ip(&self.server),
             "config" => command::handle_config(&mut self.server)
                         .expect("Error building configuration."), 
             "run" => command::handle_run(&mut self.server),
