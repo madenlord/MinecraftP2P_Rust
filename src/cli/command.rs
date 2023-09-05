@@ -15,16 +15,6 @@ use crate::server::servercfg::ServerConfig;
 
 //=================================================================
 //====================   COMMAND FUNCTIONS   ======================
-//=================================================================
-pub fn handle_public_ip(server: &Server) {
-    if let Some(config) = server.get_config() {
-        println!("Public IP address: {}", config.get_public_ip());
-    } 
-    else {
-        println!("Server not configured yet!");
-    }
-}
-
 pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
     let regex_mem: &str = "[1-9][0-9]*[MG]";
     let regex_gui: &str = "[YN]";
@@ -73,6 +63,19 @@ pub fn handle_run(server: &mut Server) {
     match result {
         Ok(_) => println!("\nServer initialized successfully!\n"), 
         Err(err) => println!("{}", crate::server::get_error_msg(err).as_str()),
+    }
+}
+
+pub fn handle_state(server: &Server) {
+    println!("{}", server.get_state().as_str());
+}
+
+pub fn handle_public_ip(server: &Server) {
+    if let Some(config) = server.get_config() {
+        println!("Public IP address: {}", config.get_public_ip());
+    } 
+    else {
+        println!("Server not configured yet!");
     }
 }
 

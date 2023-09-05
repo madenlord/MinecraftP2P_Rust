@@ -49,6 +49,14 @@ impl Server {
         &self.config
     }
 
+    pub fn get_state(&self) -> String {
+        match &self.state {
+            State::HOSTED(host) => format!("Hosted by {}\n", host),
+            State::RUNNING(pid) => format!("Server running (PID = {})\n", pid),
+            State::STOPPED => String::from("Server is not running.\n"), 
+        }
+    }
+
     pub fn is_config(&self) -> bool {
         if let None = self.config { false }
         else { true }
@@ -111,8 +119,8 @@ impl Server {
 pub fn get_error_msg(err: ServerError) -> String {
     match err {
         ServerError::NO_CONFIG => String::from("Server has not been configured yet!"),
-        ServerError::RUNNING(pid) => String::from(format!("Server is already running! (PID = {})\n", pid)),
-        ServerError::HOSTED(host) => String::from(format!("Server is being hosted by {}", host.as_str())),
+        ServerError::RUNNING(pid) => format!("Server is already running! (PID = {})\n", pid),
+        ServerError::HOSTED(host) => format!("Server is being hosted by {}", host.as_str()),
         ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!"),
     }
 }
