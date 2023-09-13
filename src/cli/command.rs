@@ -7,8 +7,6 @@ use crate::server::servercfg::ServerConfig;
 // TODO: Implement the following commands:
 //      + getprivateip (returns private IP)
 //      + host (owns the server or returns the current server host name)
-//      + state (returns the state of the server)
-//      + stop (stops the server if running)
 
 
 
@@ -62,6 +60,17 @@ pub fn handle_run(server: &mut Server) {
 
     match result {
         Ok(_) => println!("\nServer initialized successfully!\n"), 
+        Err(err) => println!("{}", crate::server::get_error_msg(err).as_str()),
+    }
+}
+
+pub fn handle_stop(server: &mut Server) {
+    println!("Stopping server...");
+
+    let result = server.stop();
+
+    match result {
+        Ok(_) => println!("Server stopped successfully!\n"),
         Err(err) => println!("{}", crate::server::get_error_msg(err).as_str()),
     }
 }

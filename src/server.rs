@@ -1,7 +1,7 @@
 pub mod servercfg;
 mod ioutils;
 
-use std::process::Child;
+use std::process::{Child};
 
 use servercfg::ServerConfig;
 
@@ -30,6 +30,7 @@ pub enum ServerError {
     RUNNING(u32),
     HOSTED(String),
     JAR_FAIL,
+    NOT_FOUND,
 }
 
 impl Server {
@@ -77,6 +78,24 @@ impl Server {
         }
     }
 
+    // TODO: REPAIR BUG!! When executing the function,
+    // the "kill()" is not executed. Instead, the next commands
+    // of this CLI are passed to the stdin of the Minecraft Server .jar .
+    //
+    // When using "run", then "state" and finally "stop" command, 
+    // the function works... Why? 
+    pub fn stop(&mut self) -> Result<(), ServerError> {
+        match &mut self.process {
+            Some(ref mut child) => {
+                child.kill().expect("Could not stop Child process (Minecraft Server).");
+                Ok(())
+            },
+            None => {
+                Err(ServerError::NOT_FOUND)
+            }
+        }
+    }
+
     fn execute_server_jar(&mut self) -> Result<u32, ServerError> {
         if let Some(config) = &(self.config) {
             let program = "java";
@@ -118,9 +137,10 @@ impl Server {
 //=================================================================
 pub fn get_error_msg(err: ServerError) -> String {
     match err {
-        ServerError::NO_CONFIG => String::from("Server has not been configured yet!"),
+        ServerError::NO_CONFIG => String::from("Server has not been configured yet!\n"),
         ServerError::RUNNING(pid) => format!("Server is already running! (PID = {})\n", pid),
-        ServerError::HOSTED(host) => format!("Server is being hosted by {}", host.as_str()),
-        ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!"),
+        ServerError::HOSTED(host) => format!("Server is being hosted by {}\n", host.as_str()),
+        ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!\n"),
+        ServerError::NOT_FOUND => String::from("Server instance could not be found!\n"),
     }
 }

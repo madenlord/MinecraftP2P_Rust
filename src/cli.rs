@@ -40,6 +40,7 @@ impl Cli {
             "config" => command::handle_config(&mut self.server)
                         .expect("Error building configuration."), 
             "run" => command::handle_run(&mut self.server),
+            "stop" => command::handle_stop(&mut self.server),
             "state" => command::handle_state(&self.server),
             "getpublicip" => command::handle_public_ip(&self.server),
             "quit" => self.stop = true,
