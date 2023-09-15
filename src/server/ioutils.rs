@@ -1,8 +1,8 @@
 pub mod terminal {
-    use std::process::{Command, Child, Stdio};
+    use std::process::{Command, Child, Stdio, ExitStatus};
     use std::ffi::OsStr;
 
-    pub fn execute_command<I, S>(
+    pub fn spawn_process<I, S>(
         program: &str,
         args: I,
         dir: &str,
@@ -21,6 +21,22 @@ pub mod terminal {
         )).args(args);
 
         process.spawn()
+    }
+
+    pub fn execute_command<I, S>(
+        program: &str,
+        args: I,
+        dir: &str
+    ) -> Result<ExitStatus, std::io::Error>
+    where 
+        I: IntoIterator<Item = S>,
+        S: AsRef <OsStr>,
+    {
+        let mut command: Command = Command::new(program);
+        command
+        .current_dir(dir)
+        .args(args)
+        .status()
     }
 }
 

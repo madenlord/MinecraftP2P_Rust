@@ -110,7 +110,7 @@ impl Server {
 
             if !config.get_gui() { args[4] = String::from("--nogui"); }
 
-            let command_result = ioutils::terminal::execute_command(
+            let command_result = ioutils::terminal::spawn_process(
                 program, args, dir, LOG_PATH
             );
 
