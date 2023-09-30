@@ -43,6 +43,7 @@ impl Cli {
             "stop" => command::handle_stop(&mut self.server),
             "state" => command::handle_state(&self.server),
             "getpublicip" => command::handle_public_ip(&self.server),
+            "getconfig" => command::handle_get_config(&self.server),
             "quit" => self.stop = true,
             _ => command::handle_unknown(command), 
         };

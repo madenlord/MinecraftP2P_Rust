@@ -1,7 +1,8 @@
 pub mod servercfg;
+mod repo;
 mod ioutils;
 
-use std::process::{Child};
+use std::process::Child;
 
 use servercfg::ServerConfig;
 

@@ -10,9 +10,9 @@ use crate::server::servercfg::ServerConfig;
 
 
 
-
 //=================================================================
 //====================   COMMAND FUNCTIONS   ======================
+//=================================================================
 pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
     let regex_mem: &str = "[1-9][0-9]*[MG]";
     let regex_gui: &str = "[YN]";
@@ -85,6 +85,14 @@ pub fn handle_public_ip(server: &Server) {
     } 
     else {
         println!("Server not configured yet!");
+    }
+}
+
+pub fn handle_get_config(server: &Server) {
+    if let Some(config) = server.get_config() {
+        println!("{}", config.to_string());
+    } else {
+        println!("Server not configured yet!\n");
     }
 }
 

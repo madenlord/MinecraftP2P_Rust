@@ -3,6 +3,8 @@ use std::str;
 
 use super::ioutils;
 
+const CONF_FILEPATH: &str = "conf/server.conf";
+
 pub struct ServerConfig {
     ip: String,
     mem_max: String,
@@ -42,7 +44,19 @@ impl ServerConfig {
         &(self.gui)
     }
 
+    pub fn to_string(&self) -> String {
+        let string = format!("Public IP = {}\n\
+        Max memory = {}\n\
+        Initial memory = {}\n\
+        GUI = {}\
+        ", self.ip, self.mem_max, self.mem_init, self.gui);
+
+        string
+    }
+
     fn find_public_ip() -> Result<String, Box<dyn Error>> {
         ioutils::internet::get_req("http://api.ipify.org")
     }
+
+    
 }
