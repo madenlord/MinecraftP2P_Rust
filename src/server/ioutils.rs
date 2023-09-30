@@ -72,11 +72,16 @@ pub mod internet {
 
 pub mod file {
     use std::fs::{File, OpenOptions};
+    use std::io::Write;
 
     pub fn open_file(filepath: &str) -> Result<File, std::io::Error> {
         OpenOptions::new()
         .write(true)
         .create(true)
         .open(filepath)
+    }
+
+    pub fn write(mut file: &File, content: &str) -> Result<(), std::io::Error> {
+        file.write_all(content.as_bytes())
     }
 }
