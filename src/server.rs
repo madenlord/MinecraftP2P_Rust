@@ -36,8 +36,15 @@ pub enum ServerError {
 
 impl Server {
     pub fn new() -> Server {
+        let server_config: Option<ServerConfig>;
+
+        match ServerConfig::load_config() {
+            Ok(cfg) => server_config = Some(cfg),
+            Err(_) => server_config = None,
+        };
+
         Server { 
-            config: None,
+            config: server_config,
             state: State::STOPPED,
             process: None, 
         }

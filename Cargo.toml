@@ -6,8 +6,14 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+# API and REST operations
 hyper = { version = "0.14.27", features = ["full"] }
 tokio = { version = "1", features = ["full"] }
+
+# Serialization 
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0"
+
+# Misc
 bytes = "1.4.0"
 regex = "1.0.0"
-json = "0.12.4"

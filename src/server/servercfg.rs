@@ -1,11 +1,12 @@
 use std::error::Error;
 use std::str;
-use json;
+use serde::{Serialize, Deserialize};
 
 use super::ioutils;
 
 const CONFIG_FILEPATH: &str = "conf/server.conf";
 
+#[derive(Serialize, Deserialize)]
 pub struct ServerConfig {
     ip: String,
     mem_max: String,
@@ -28,8 +29,14 @@ impl ServerConfig {
             gui: gui,
         };
 
-        let config_file = ioutils::file::open_file(CONFIG_FILEPATH)?;
-        ioutils::file::write(&config_file, server_config.to_json().as_str())?;
+        ioutils::file::write(CONFIG_FILEPATH, server_config.to_json()?.as_str())?;
+
+        Ok(server_config)
+    }
+
+    pub fn load_config() -> Result<ServerConfig, Box<dyn Error>>{
+        let json_config = ioutils::file::read(CONFIG_FILEPATH)?;
+        let server_config: ServerConfig = serde_json::from_str(json_config.as_str())?;
 
         Ok(server_config)
     }
@@ -64,14 +71,9 @@ impl ServerConfig {
         ioutils::internet::get_req("http://api.ipify.org")
     }
 
-    pub fn to_json(&self) -> String {
-        let config = json::object!(
-            ip: self.ip.as_str(),
-            mem_max: self.mem_max.as_str(),
-            mem_init: self.mem_init.as_str(),
-            gui: self.gui
-        );
+    fn to_json(&self) -> Result<String, Box<dyn Error>> {
+        let self_json = serde_json::to_string(&self)?;
         
-        config.dump()
+        Ok(self_json)
     } 
 }
