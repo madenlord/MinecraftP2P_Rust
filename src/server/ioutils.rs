@@ -1,5 +1,5 @@
 pub mod terminal {
-    use std::process::{Command, Child, Stdio, ExitStatus};
+    use std::process::{Command, Child, Stdio, Output};
     use std::ffi::OsStr;
 
     pub fn spawn_process<I, S>(
@@ -27,7 +27,7 @@ pub mod terminal {
         program: &str,
         args: I,
         dir: &str
-    ) -> Result<ExitStatus, std::io::Error>
+    ) -> Result<Output, std::io::Error>
     where 
         I: IntoIterator<Item = S>,
         S: AsRef <OsStr>,
@@ -36,7 +36,7 @@ pub mod terminal {
         command
         .current_dir(dir)
         .args(args)
-        .status()
+        .output()
     }
 }
 
