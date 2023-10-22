@@ -9,6 +9,7 @@ const CONFIG_FILEPATH: &str = "conf/server.conf";
 #[derive(Serialize, Deserialize)]
 pub struct ServerConfig {
     ip: String,
+    username: String,
     mem_max: String,
     mem_init: String,
     gui: bool,
@@ -19,11 +20,12 @@ pub struct ServerConfig {
 // files / modules?
 impl ServerConfig {
     pub fn new(
-        mem_max: String, 
+        username: String, mem_max: String, 
         mem_init: String, gui: bool
     ) ->  Result<ServerConfig, Box<dyn Error>>{
         let server_config = ServerConfig {
             ip: Self::find_public_ip()?,
+            username: username,
             mem_max: mem_max,
             mem_init: mem_init,
             gui: gui,
@@ -60,10 +62,11 @@ impl ServerConfig {
     pub fn to_string(&self) -> String {
        format!(
         "Public IP = {}\n\
+        Username = {}\n\
         Max memory = {}\n\
         Initial memory = {}\n\
         GUI = {}\n\
-        ", self.ip, self.mem_max, self.mem_init, self.gui
+        ", self.ip, self.username, self.mem_max, self.mem_init, self.gui
         )
     }
 
