@@ -3,6 +3,7 @@ mod repo;
 mod ioutils;
 
 use std::process::Child;
+use std::io::Write;
 
 use servercfg::ServerConfig;
 
@@ -108,18 +109,17 @@ impl Server {
         }
     }
 
-    // TODO: REPAIR BUG!! When executing the function,
-    // the "kill()" is not executed. Instead, the next commands
-    // of this CLI are passed to the stdin of the Minecraft Server .jar .
-    //
-    // When using "run", then "state" and finally "stop" command, 
-    // the function works... Why? 
     pub fn stop(&mut self) -> Result<(), ServerError> {
         match &mut self.process {
             Some(ref mut child) => {
-                child.kill().expect("Could not stop Child process (Minecraft Server).");
+                let mut child_stdin = child.stdin.take();
+                child_stdin.unwrap().write_all("stop".as_bytes());
+                child.wait();
 
                 self.state = State::STOPPED;
+
+                self.release_host()?;
+
                 Ok(())
             },
             None => {
@@ -164,19 +164,16 @@ impl Server {
     fn host(&mut self) -> Result<bool, ServerError> {
         let mut hosting: bool = false;
 
-        let update_found = match repo::download_updates() {
-            Ok(found) => found,
-            Err(_) => return Err(ServerError::REPO_FAIL)
+        match repo::download_updates() {
+            Err(_) => return Err(ServerError::REPO_FAIL),
+            _ => ()
         };
 
-        let mut current_host: String = String::new();
-        if update_found {
-            current_host = match repo::get_current_host() {
-                Ok(username) => username,
-                Err(_) => return Err(ServerError::IO_ERROR(repo::get_hostfile_path()))
-            };
-
-        }  
+        let current_host: String;
+        current_host = match repo::get_current_host() {
+            Ok(username) => username,
+            Err(_) => return Err(ServerError::IO_ERROR(repo::get_hostfile_path()))
+        };
 
         if current_host.is_empty() {
             let user = self.config.as_ref().unwrap().get_username();
@@ -191,6 +188,24 @@ impl Server {
         }
 
         Ok(hosting)        
+    }
+
+    fn release_host(&mut self) -> Result<(), ServerError> {
+        // '.host' file gets cleaned
+        let hostfile_path = repo::get_hostfile_path();
+        match ioutils::file::write(hostfile_path.as_str(), "") {
+            Err(_) => return Err(ServerError::IO_ERROR(hostfile_path)),
+            _ => ()
+        }
+
+        // All world data and the '.host' file gets
+        // updated and pushed into the repo
+        match repo::upload_world_data() {
+            Err(_) => return Err(ServerError::REPO_FAIL),
+            _ => ()
+        };
+
+        Ok(())
     }
 }
 

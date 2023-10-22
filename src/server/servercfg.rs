@@ -38,7 +38,7 @@ impl ServerConfig {
 
     pub fn load_config() -> Result<ServerConfig, Box<dyn Error>>{
         let json_config = ioutils::file::read(CONFIG_FILEPATH)?;
-        let server_config: ServerConfig = serde_json::from_str(json_config.as_str())?;
+        let server_config: ServerConfig = serde_json::from_str(json_config.as_str().trim())?;
 
         Ok(server_config)
     }

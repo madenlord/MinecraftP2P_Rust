@@ -6,10 +6,6 @@ const HOSTFILE_PATH: &str = "mojang/.host";
 
 
 
-pub fn get_hostfile_path() -> String {
-    String::from(HOSTFILE_PATH)
-}
-
 pub fn download_updates() -> Result<bool, std::io::Error>{
     let mut update_found: bool = false;
     
@@ -25,10 +21,12 @@ pub fn download_updates() -> Result<bool, std::io::Error>{
     Ok(update_found)
 }
 
-pub fn get_current_host() -> Result<String, std::io::Error> {
-    let hostfile_content = file::read(HOSTFILE_PATH)?;
+pub fn upload_world_data() -> Result<(), std::io::Error> {
+    git::add(vec!["*"])?;
+    git::commit("Saving world data")?;
+    git::push()?;
 
-    Ok(String::from(hostfile_content.trim()))
+    Ok(())
 }
 
 pub fn update_host(user: &str) -> Result<(), std::io::Error> {
@@ -42,22 +40,24 @@ pub fn update_host(user: &str) -> Result<(), std::io::Error> {
     Ok(())
 }
 
+pub fn get_hostfile_path() -> String {
+    String::from(HOSTFILE_PATH)
+}
+
+pub fn get_current_host() -> Result<String, std::io::Error> {
+    let hostfile_content = file::read(HOSTFILE_PATH)?;
+
+    Ok(String::from(hostfile_content.trim()))
+}
+
 mod git {
     use std::process::Output;    
 
     use crate::server::ioutils::terminal;
 
     // =========== GET AND UPDATE STATE ===========
-    pub fn status() -> Result<Output, std::io::Error>{
-        execute_git_command("status", vec![])
-    }
-
     pub fn fetch() -> Result<Output, std::io::Error>{
         execute_git_command("fetch", vec![])
-    }
-
-    pub fn pull() -> Result<Output, std::io::Error>{
-        execute_git_command("pull", vec![])
     }
 
     pub fn pull_no_ff() -> Result<Output, std::io::Error>{
@@ -81,13 +81,6 @@ mod git {
     }
 
 
-
-    // =========== SETTERS ===========
-    pub fn set_origin(url: &str) -> Result<Output, std::io::Error> {
-        execute_git_command("remote", vec!["set-url", "origin", url])
-    }
-
-    
 
     // =========== PRIVATE ===========
     fn execute_git_command<'a>(command: &'a str, mut args: Vec<&'a str>) -> Result<Output, std::io::Error>{ 
