@@ -32,6 +32,8 @@ pub enum ServerError {
     HOSTED(String),
     JAR_FAIL,
     NOT_FOUND,
+    IO_ERROR(String),
+    REPO_FAIL
 }
 
 impl Server {
@@ -50,12 +52,13 @@ impl Server {
         }
     }
 
-    pub fn configure(&mut self, config: ServerConfig) {
-        self.config = Some(config);
-    }
-
+    // =========== SETTERS AND GETTERS ===========
     pub fn get_config(&self) -> &Option<ServerConfig> {
         &self.config
+    }
+
+    pub fn set_configuration(&mut self, config: ServerConfig) {
+        self.config = Some(config);
     }
 
     pub fn get_state(&self) -> String {
@@ -66,7 +69,19 @@ impl Server {
         }
     }
 
-    pub fn is_config(&self) -> bool {
+    pub fn get_host(&self) -> &str {
+        match &self.state {
+            State::RUNNING(_) => self.config.as_ref().unwrap().get_username(),
+            State::HOSTED(host) => {
+                let host = host.as_str();
+                host
+            }
+            _ => ""
+        }
+    }
+
+    // =========== FUNCTIONALITY ===========
+    pub fn is_configured(&self) -> bool {
         if let None = self.config { false }
         else { true }
     }
@@ -79,9 +94,16 @@ impl Server {
             State::RUNNING(pid) => Err(ServerError::RUNNING(*pid)),
             State::HOSTED(host) => Err(ServerError::HOSTED(String::from(host))),
             State::STOPPED => { 
-                let pid = self.execute_server_jar()?;
-                self.state = State::RUNNING(pid);
-                Ok(())
+                let hosting = self.host()?;
+
+                if hosting {
+                    let pid = self.execute_server_jar()?;
+                    self.state = State::RUNNING(pid);
+                    Ok(())
+                }
+                else {
+                    Err(ServerError::HOSTED(String::from(self.get_host())))
+                }
             }
         }
     }
@@ -96,6 +118,8 @@ impl Server {
         match &mut self.process {
             Some(ref mut child) => {
                 child.kill().expect("Could not stop Child process (Minecraft Server).");
+
+                self.state = State::STOPPED;
                 Ok(())
             },
             None => {
@@ -104,6 +128,7 @@ impl Server {
         }
     }
 
+    // =========== PRIVATE FUNCTIONS ===========
     fn execute_server_jar(&mut self) -> Result<u32, ServerError> {
         if let Some(config) = &(self.config) {
             let program = "java";
@@ -135,6 +160,38 @@ impl Server {
             Err(ServerError::NO_CONFIG)
         }
     }
+
+    fn host(&mut self) -> Result<bool, ServerError> {
+        let mut hosting: bool = false;
+
+        let update_found = match repo::download_updates() {
+            Ok(found) => found,
+            Err(_) => return Err(ServerError::REPO_FAIL)
+        };
+
+        let mut current_host: String = String::new();
+        if update_found {
+            current_host = match repo::get_current_host() {
+                Ok(username) => username,
+                Err(_) => return Err(ServerError::IO_ERROR(repo::get_hostfile_path()))
+            };
+
+        }  
+
+        if current_host.is_empty() {
+            let user = self.config.as_ref().unwrap().get_username();
+            match repo::update_host(user) {
+                Err(_) => return Err(ServerError::REPO_FAIL),
+                _ => ()
+            }
+            hosting = true;
+        }
+        else {
+            self.state = State::HOSTED(current_host);
+        }
+
+        Ok(hosting)        
+    }
 }
 
 
@@ -150,5 +207,7 @@ pub fn get_error_msg(err: ServerError) -> String {
         ServerError::HOSTED(host) => format!("Server is being hosted by {}\n", host.as_str()),
         ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!\n"),
         ServerError::NOT_FOUND => String::from("Server instance could not be found!\n"),
+        ServerError::IO_ERROR(file) => format!("I/O ERROR: could not read '{}'!\n", file),
+        ServerError::REPO_FAIL => String::from("Could not reach the world's data repository!\n"),
     }
 }

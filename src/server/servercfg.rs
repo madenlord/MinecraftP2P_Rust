@@ -47,6 +47,10 @@ impl ServerConfig {
         self.ip.as_str()
     }
 
+    pub fn get_username(&self) -> &str {
+        self.username.as_str()
+    }
+
     pub fn get_mem_max(&self) -> &str {
         self.mem_max.as_str()
     }

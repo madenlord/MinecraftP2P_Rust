@@ -45,7 +45,7 @@ pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
     match server_config {
         Ok(_) => {
             println!("\nServer configured!");
-            server.configure(server_config.unwrap());
+            server.set_configuration(server_config.unwrap());
             Ok(())
         },
         Err(boxdyn) => {
@@ -56,7 +56,7 @@ pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
 }
 
 pub fn handle_run(server: &mut Server) {
-    if !server.is_config() {
+    if !server.is_configured() {
         println!("\nServer has not been configured yet!");
         println!("Starting configuration command...");
         handle_config(server).expect("Error building configuration");

@@ -1,4 +1,14 @@
+use crate::server::ioutils::file;
+
 const SAVE_PATH: &str = "conf/repo.conf";
+const HOSTFILE_NAME: &str = ".host";
+const HOSTFILE_PATH: &str = "mojang/.host";
+
+
+
+pub fn get_hostfile_path() -> String {
+    String::from(HOSTFILE_PATH)
+}
 
 pub fn download_updates() -> Result<bool, std::io::Error>{
     let mut update_found: bool = false;
@@ -13,6 +23,23 @@ pub fn download_updates() -> Result<bool, std::io::Error>{
     }
 
     Ok(update_found)
+}
+
+pub fn get_current_host() -> Result<String, std::io::Error> {
+    let hostfile_content = file::read(HOSTFILE_PATH)?;
+
+    Ok(String::from(hostfile_content.trim()))
+}
+
+pub fn update_host(user: &str) -> Result<(), std::io::Error> {
+    // Current hostname is written in the hostfile and changes
+    // are pushed to the Git repo
+    file::write(HOSTFILE_PATH, user)?; 
+    git::add(vec![HOSTFILE_NAME])?;
+    git::commit(format!("New host: {}", user).as_str())?;
+    git::push()?;
+
+    Ok(())
 }
 
 mod git {
