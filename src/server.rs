@@ -3,6 +3,7 @@ mod repo;
 mod ioutils;
 
 use std::process::Child;
+use std::io::Write;
 
 use servercfg::ServerConfig;
 
@@ -32,6 +33,8 @@ pub enum ServerError {
     HOSTED(String),
     JAR_FAIL,
     NOT_FOUND,
+    IO_ERROR(String),
+    REPO_FAIL
 }
 
 impl Server {
@@ -50,12 +53,13 @@ impl Server {
         }
     }
 
-    pub fn configure(&mut self, config: ServerConfig) {
-        self.config = Some(config);
-    }
-
+    // =========== SETTERS AND GETTERS ===========
     pub fn get_config(&self) -> &Option<ServerConfig> {
         &self.config
+    }
+
+    pub fn set_configuration(&mut self, config: ServerConfig) {
+        self.config = Some(config);
     }
 
     pub fn get_state(&self) -> String {
@@ -66,7 +70,19 @@ impl Server {
         }
     }
 
-    pub fn is_config(&self) -> bool {
+    pub fn get_host(&self) -> &str {
+        match &self.state {
+            State::RUNNING(_) => self.config.as_ref().unwrap().get_username(),
+            State::HOSTED(host) => {
+                let host = host.as_str();
+                host
+            }
+            _ => ""
+        }
+    }
+
+    // =========== FUNCTIONALITY ===========
+    pub fn is_configured(&self) -> bool {
         if let None = self.config { false }
         else { true }
     }
@@ -79,23 +95,31 @@ impl Server {
             State::RUNNING(pid) => Err(ServerError::RUNNING(*pid)),
             State::HOSTED(host) => Err(ServerError::HOSTED(String::from(host))),
             State::STOPPED => { 
-                let pid = self.execute_server_jar()?;
-                self.state = State::RUNNING(pid);
-                Ok(())
+                let hosting = self.host()?;
+
+                if hosting {
+                    let pid = self.execute_server_jar()?;
+                    self.state = State::RUNNING(pid);
+                    Ok(())
+                }
+                else {
+                    Err(ServerError::HOSTED(String::from(self.get_host())))
+                }
             }
         }
     }
 
-    // TODO: REPAIR BUG!! When executing the function,
-    // the "kill()" is not executed. Instead, the next commands
-    // of this CLI are passed to the stdin of the Minecraft Server .jar .
-    //
-    // When using "run", then "state" and finally "stop" command, 
-    // the function works... Why? 
     pub fn stop(&mut self) -> Result<(), ServerError> {
         match &mut self.process {
             Some(ref mut child) => {
-                child.kill().expect("Could not stop Child process (Minecraft Server).");
+                let mut child_stdin = child.stdin.take();
+                child_stdin.unwrap().write_all("stop".as_bytes());
+                child.wait();
+
+                self.state = State::STOPPED;
+
+                self.release_host()?;
+
                 Ok(())
             },
             None => {
@@ -104,6 +128,7 @@ impl Server {
         }
     }
 
+    // =========== PRIVATE FUNCTIONS ===========
     fn execute_server_jar(&mut self) -> Result<u32, ServerError> {
         if let Some(config) = &(self.config) {
             let program = "java";
@@ -135,6 +160,53 @@ impl Server {
             Err(ServerError::NO_CONFIG)
         }
     }
+
+    fn host(&mut self) -> Result<bool, ServerError> {
+        let mut hosting: bool = false;
+
+        match repo::download_updates() {
+            Err(_) => return Err(ServerError::REPO_FAIL),
+            _ => ()
+        };
+
+        let current_host: String;
+        current_host = match repo::get_current_host() {
+            Ok(username) => username,
+            Err(_) => return Err(ServerError::IO_ERROR(repo::get_hostfile_path()))
+        };
+
+        if current_host.is_empty() {
+            let user = self.config.as_ref().unwrap().get_username();
+            match repo::update_host(user) {
+                Err(_) => return Err(ServerError::REPO_FAIL),
+                _ => ()
+            }
+            hosting = true;
+        }
+        else {
+            self.state = State::HOSTED(current_host);
+        }
+
+        Ok(hosting)        
+    }
+
+    fn release_host(&mut self) -> Result<(), ServerError> {
+        // '.host' file gets cleaned
+        let hostfile_path = repo::get_hostfile_path();
+        match ioutils::file::write(hostfile_path.as_str(), "") {
+            Err(_) => return Err(ServerError::IO_ERROR(hostfile_path)),
+            _ => ()
+        }
+
+        // All world data and the '.host' file gets
+        // updated and pushed into the repo
+        match repo::upload_world_data() {
+            Err(_) => return Err(ServerError::REPO_FAIL),
+            _ => ()
+        };
+
+        Ok(())
+    }
 }
 
 
@@ -150,5 +222,7 @@ pub fn get_error_msg(err: ServerError) -> String {
         ServerError::HOSTED(host) => format!("Server is being hosted by {}\n", host.as_str()),
         ServerError::JAR_FAIL => String::from("mojang/server.jar execution failed!\n"),
         ServerError::NOT_FOUND => String::from("Server instance could not be found!\n"),
+        ServerError::IO_ERROR(file) => format!("I/O ERROR: could not read '{}'!\n", file),
+        ServerError::REPO_FAIL => String::from("Could not reach the world's data repository!\n"),
     }
 }

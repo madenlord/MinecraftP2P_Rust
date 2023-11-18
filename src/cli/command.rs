@@ -17,6 +17,10 @@ pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
     let regex_mem: &str = "[1-9][0-9]*[MG]";
     let regex_gui: &str = "[YN]";
 
+    let mut username: String = String::new();
+    println!("\nPlease, enter a username for hosting purposes");
+    super::read_command(&mut username)?;
+
     println!("\nTo introduce memory data, please refer to units with its initial");
     println!("(That is, 500 MB => 500M, 5 GB => 5G...)");
 
@@ -35,12 +39,13 @@ pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
 
     println!("\nBuilding server configuration...");
 
-    let server_config = ServerConfig::new(mem_max,mem_init,gui);
+    let server_config = ServerConfig::new(username, 
+        mem_max,mem_init,gui);
 
     match server_config {
         Ok(_) => {
             println!("\nServer configured!");
-            server.configure(server_config.unwrap());
+            server.set_configuration(server_config.unwrap());
             Ok(())
         },
         Err(boxdyn) => {
@@ -51,7 +56,7 @@ pub fn handle_config(server: &mut Server) -> Result<(), Box<dyn Error>>{
 }
 
 pub fn handle_run(server: &mut Server) {
-    if !server.is_config() {
+    if !server.is_configured() {
         println!("\nServer has not been configured yet!");
         println!("Starting configuration command...");
         handle_config(server).expect("Error building configuration");

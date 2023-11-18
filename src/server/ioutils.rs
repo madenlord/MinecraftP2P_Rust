@@ -1,5 +1,5 @@
 pub mod terminal {
-    use std::process::{Command, Child, Stdio, ExitStatus};
+    use std::process::{Command, Child, Stdio, Output};
     use std::ffi::OsStr;
 
     pub fn spawn_process<I, S>(
@@ -15,6 +15,7 @@ pub mod terminal {
         let mut process: Command = Command::new(program);
         process
         .current_dir(dir)
+        .stdin(Stdio::piped())
         .stdout(Stdio::from(
             super::file::open_file(stdout_filepath)
             .expect("Failed opening stdout file")
@@ -27,7 +28,7 @@ pub mod terminal {
         program: &str,
         args: I,
         dir: &str
-    ) -> Result<ExitStatus, std::io::Error>
+    ) -> Result<Output, std::io::Error>
     where 
         I: IntoIterator<Item = S>,
         S: AsRef <OsStr>,
@@ -36,7 +37,7 @@ pub mod terminal {
         command
         .current_dir(dir)
         .args(args)
-        .status()
+        .output()
     }
 }
 
@@ -77,6 +78,7 @@ pub mod file {
     pub fn open_file(filepath: &str) -> Result<File, std::io::Error> {
         OpenOptions::new()
         .write(true)
+        .truncate(true)
         .create(true)
         .open(filepath)
     }
